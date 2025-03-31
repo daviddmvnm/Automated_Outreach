@@ -1,0 +1,6 @@
+.env
+.venv/
+*.html
+*.pkl
+*.db
+html_cache/
