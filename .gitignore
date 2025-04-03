@@ -3,4 +3,4 @@
 *.html
 *.pkl
 *.db
-html_cache/
+*.csv
