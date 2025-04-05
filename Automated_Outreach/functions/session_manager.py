@@ -21,6 +21,9 @@ class SessionManager:
         chromedriver_autoinstaller.install()
         options = Options()
         options.add_argument("--user-agent=Mozilla/5.0")
+        options.add_argument("--start-maximized")
+        options.add_argument("--disable-backgrounding-occluded-windows")
+        options.add_argument("--disable-renderer-backgrounding")
 
         if self.use_user_profile:
             if self.user_profile_path:
@@ -29,7 +32,11 @@ class SessionManager:
             else:
                 print("[i] User profile flag is on but no path specified.")
 
-        return webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(options=options)
+        driver.set_window_position(0, 0)
+        driver.set_window_size(1200, 1000)
+
+        return driver
 
     def _human_mimic(self):
         human_scroll(self.driver, total_scrolls=5)

@@ -1,3 +1,4 @@
+#shallow_scraper.py
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
@@ -7,6 +8,7 @@ import pandas as pd
 import random
 import sqlite3
 import os
+import sys
 from functions.human_mimic import human_sleep, random_hover
 
 class ShallowScraper:
@@ -14,17 +16,16 @@ class ShallowScraper:
         self.driver = driver
         self.people = []
         self.seen_urls = set()
-        self.original_window_size = self.driver.get_window_size()  # Save original size
+        self.original_window_size = self.driver.get_window_size()
 
-    # Temporarily resize the window for scraping
-    def temporarily_resize_window(self, width=1280, height=900):
-        self.driver.set_window_size(width, height)
-        human_sleep(1, 0.5)  # Optional: give the page a moment to adjust
+    def temporarily_resize_window(self):
+        self.driver.fullscreen_window()
+        human_sleep(1, 0.5)
 
-    # Reset to the original window size
+
     def reset_window_size(self):
         self.driver.set_window_size(self.original_window_size['width'], self.original_window_size['height'])
-        human_sleep(1, 0.5)  # Optional: adjust with a short sleep to ensure smooth transition
+        human_sleep(1, 0.5)
 
     def wait_and_open_target_tab(self, target_label, max_retries=10, scroll_loops=8):
         print(f"Trying to open 'People you may know from {target_label}' tab")
@@ -36,10 +37,7 @@ class ShallowScraper:
             human_sleep(5, 2)
             random_hover(self.driver, "a")
 
-            # Temporarily resize window for scraping
             self.temporarily_resize_window()
-
-            # Trigger modal to load
             self.driver.execute_script("window.scrollBy(0, 500);")
             human_sleep(1.5, 0.5)
             self.driver.execute_script("""
@@ -56,7 +54,6 @@ class ShallowScraper:
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 print(f"    Full-page scroll {scroll + 1}/{scroll_loops}")
                 human_sleep(2, 1.5)
-
                 if scroll in {2, 5} and random.random() < 0.4:
                     print("   ...pausing to simulate reading")
                     human_sleep(3, 1)
@@ -68,18 +65,12 @@ class ShallowScraper:
                 )
                 self.driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth' });", show_all_btn)
                 human_sleep(2, 1)
-
                 ActionChains(self.driver).move_to_element(show_all_btn).perform()
                 human_sleep(1.5, 0.5)
-
                 self.driver.execute_script("arguments[0].click();", show_all_btn)
                 print(f"Opened suggestions for: {target_label}")
-                
-                # Reset the window size after actions
                 self.reset_window_size()
-
                 return True
-
             except Exception:
                 print("Did not find the tab this time.")
                 if random.random() < 0.4:
@@ -111,9 +102,7 @@ class ShallowScraper:
 
             for card in cards:
                 href = card['href']
-                if not href.startswith("https://www.linkedin.com/in/"):
-                    continue
-                if href in self.seen_urls:
+                if not href.startswith("https://www.linkedin.com/in/") or href in self.seen_urls:
                     continue
 
                 try:
@@ -134,7 +123,6 @@ class ShallowScraper:
 
                     if max_profiles is not None and len(self.seen_urls) >= max_profiles:
                         break
-
                 except Exception as e:
                     print("   Error parsing card:", e)
                     continue
@@ -146,7 +134,6 @@ class ShallowScraper:
         while True:
             loop += 1
             print(f"Loop {loop}")
-
             new_profiles = extract_new_people()
             print(f"   New: {new_profiles} | Total collected: {len(self.seen_urls)}")
 
@@ -172,14 +159,11 @@ class ShallowScraper:
                         self.driver.execute_script("""
                             let container = arguments[0];
                             container.scrollTop += container.clientHeight * arguments[1];
-                            container.style.border = '2px solid red';
                         """, scroll_container, scroll_step)
                         print(f"      Modal scroll {s+1}/{scrolls_per_loop} [factor: {scroll_step:.2f}]")
                         human_sleep(random.uniform(1.5, 2.5))
-
                 except Exception as e:
                     print("   Failed modal scroll:", e)
-                    print("   Falling back to full-page scroll.")
                     for s in range(scrolls_per_loop):
                         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                         print(f"      Fallback scroll {s+1}/{scrolls_per_loop}")
@@ -191,7 +175,6 @@ class ShallowScraper:
                     print(f"      Full-page scroll {s+1}/{scrolls_per_loop}")
                     human_sleep(random.uniform(1.5, 2.5))
 
-            # Re-add see more button click logic
             try:
                 see_more_button = self.driver.find_element(
                     By.CSS_SELECTOR,
@@ -220,7 +203,11 @@ class ShallowScraper:
         return df
 
     def save_to_database(self, df, db_path="data/linkedin_profiles.db"):
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
         full_db_path = os.path.join(base_path, "..", db_path)
         os.makedirs(os.path.dirname(full_db_path), exist_ok=True)
 

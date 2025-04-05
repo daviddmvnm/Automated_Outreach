@@ -1,6 +1,8 @@
 import time
 import random
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+
 
 def human_sleep(base=2, variance=1):
     delay = max(0, random.uniform(base - variance, base + variance))
@@ -14,7 +16,7 @@ def human_scroll(driver, total_scrolls=5):
 
 def random_hover(driver, selector="a"):
     try:
-        elements = driver.find_elements("css selector", selector)
+        elements = driver.find_elements(By.CSS_SELECTOR, selector)
         if elements:
             el = random.choice(elements)
             ActionChains(driver).move_to_element(el).perform()

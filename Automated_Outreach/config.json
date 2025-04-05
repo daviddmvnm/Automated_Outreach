@@ -1,6 +1,21 @@
 {
     "target_label": "University of Exeter",
-    "max_profiles": 30,
-    "db_path": "data/linkedin_profiles.db"
-  }
-  
+    "max_profiles": 9,
+    "db_path": "data/linkedin_profiles.db",
+    "run_html_extraction": true,
+    "interest_keywords": [
+        "data",
+        "ai",
+        "ml",
+        "machine learning",
+        "python",
+        "analytics",
+        "data science",
+        "economics",
+        "risk",
+        "finance",
+        "sql"
+    ],
+    "run_prediction": "false",
+    "model_path": "models/base_model.pkl"
+}
