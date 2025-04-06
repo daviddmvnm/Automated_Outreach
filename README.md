@@ -1,2 +1,2 @@
 # Automated_Outreach
-I built a bot that automatises outreach on LinkedIn whilst evading bot detection
+Prototyping for a bot that automates outreach on Linkedin
